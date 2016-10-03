@@ -39,14 +39,16 @@ public class Utils {
     }
 
 
-    public static String transToKM(int distance) {
-        float convertValue;
+
+    public static String transToKM(float distance) {
         String result = null;
-        if (distance >= 1000) {
-            convertValue = distance / 1000;
-            result =  String.valueOf(convertValue) + "km";
+        int temp_distance = (int)distance;
+
+        if (temp_distance >= 1000) {
+            temp_distance = temp_distance / 1000;
+            result =  String.valueOf(temp_distance) + "km";
         } else {
-            result = String.valueOf(distance) + "m";
+            result = String.valueOf(temp_distance) + "m";
         }
 
         return result;
@@ -54,8 +56,6 @@ public class Utils {
 
 
     public static String getReverseGeoCodingInfo(double longitude, double latitude) {
-
-
         StringBuffer sb = new StringBuffer();
         String longi = String.valueOf(longitude);
         String lati = String.valueOf(latitude);
@@ -128,8 +128,8 @@ public class Utils {
         }
     }
 
-    private static String getCurrentTime() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss", Locale.KOREA);
+    public static String getCurrentTime() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd", Locale.KOREA);
         return sdf.format(new Date());
     }
 }

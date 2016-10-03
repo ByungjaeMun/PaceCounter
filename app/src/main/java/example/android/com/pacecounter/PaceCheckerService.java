@@ -92,7 +92,7 @@ public class PaceCheckerService extends Service implements SensorEventListener {
             super.handleMessage(msg);
             switch (msg.what) {
                 case EVENT_ADD_PACE_INFO:
-                    mPopupView.setText("걸음 수 : " + String.valueOf(count) + "\n총 거리 : " + s_distance);
+                    mPopupView.setText("걸음 수 : " + String.valueOf(count) + "\n이동 거리 : " + Utils.transToKM(distance));
                     if (!isCreate) {
                         mWindowManager.addView(mPopupView, mParams);
                         isCreate = true;
@@ -134,6 +134,7 @@ public class PaceCheckerService extends Service implements SensorEventListener {
         mParams.gravity = Gravity.LEFT | Gravity.TOP;
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 
+
         mPopupView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -149,7 +150,6 @@ public class PaceCheckerService extends Service implements SensorEventListener {
         if (accelometer != null) {
             sensorManager.registerListener(this, accelometer, SensorManager.SENSOR_DELAY_UI);
         }
-
 
         thread = new PaceCountThread();
         thread.start();
@@ -254,7 +254,7 @@ public class PaceCheckerService extends Service implements SensorEventListener {
     private float[] accel_data = {0, 0, 0};
     final float alpha = 0.8f;
 
-    private static final int SHAKE_THRESHOLD = 680;
+    private static final int SHAKE_THRESHOLD = 9;
     private static final int DATA_X = SensorManager.DATA_X;
     private static final int DATA_Y = SensorManager.DATA_Y;
     private static final int DATA_Z = SensorManager.DATA_Z;
@@ -269,8 +269,8 @@ public class PaceCheckerService extends Service implements SensorEventListener {
     private float speed;
 
     protected static int count;
-    protected static int distance;
-    protected static String s_distance;
+    protected static float distance;
+
 
 
     @Override
@@ -283,37 +283,42 @@ public class PaceCheckerService extends Service implements SensorEventListener {
 
                     if (gabOfTime > 300) {
                         lastTime = currentTime;
-                        x = event.values[SensorManager.DATA_X];
-                        y = event.values[SensorManager.DATA_Y];
-                        z = event.values[SensorManager.DATA_Z];
 
-                        speed = Math.abs(x + y + z - lastX - lastY - lastZ) / gabOfTime * 10000;
+                        gravity_data[0] = alpha * gravity_data[0] + (1 - alpha) * event.values[0];
+                        gravity_data[1] = alpha * gravity_data[1] + (1 - alpha) * event.values[1];
+                        gravity_data[2] = alpha * gravity_data[2] + (1 - alpha) * event.values[2];
+
+                        accel_data[0] = event.values[0] - gravity_data[0];
+                        accel_data[1] = event.values[1] - gravity_data[1];
+                        accel_data[2] = event.values[2] - gravity_data[2];
+
+
+                        //speed = Math.abs(x + y + z - lastX - lastY - lastZ) / gabOfTime * 10000;
+                        speed = Math.abs(accel_data[0] + accel_data[1] + accel_data[2]);
+                        Log.v("accel data", String.valueOf(speed));
 
                         if (speed > SHAKE_THRESHOLD) {
-                            // 이벤트 발생!!
                             Intent intent = new Intent("example.android.com.pacecounter");
                             count++;
-                            distance += calculateDistance(x, y, z);
-                            s_distance = Utils.transToKM(distance);
-                            intent.putExtra("count", String.valueOf(count));
-                            intent.putExtra("distance", s_distance);
+                            distance += calculateDistance(accel_data[0], accel_data[1], accel_data[2]);
+                            intent.putExtra("count", count);
+                            intent.putExtra("distance", distance);
                             sendBroadcast(intent);
-                            Log.v("ffff", "send intent");
+                            Log.v("Pace Service", "send intent");
                         }
 
-                        lastX = event.values[DATA_X];
-                        lastY = event.values[DATA_Y];
-                        lastZ = event.values[DATA_Z];
                     }
                 }
 
         }
-
     }
 
-    protected int calculateDistance(float x, float y, float z) {
 
-        return 1;
+    protected float calculateDistance(float x, float y, float z) {
+        /*TO DO*/
+        //Not implemented
+
+        return 0.7f;
     }
 
     @Override

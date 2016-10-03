@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
@@ -14,6 +15,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.ActivityCompat.OnRequestPermissionsResultCallback;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -38,12 +40,20 @@ public class RecordingFragment extends android.support.v4.app.Fragment implement
 
     private InfoUpdateHandler handler = new InfoUpdateHandler();
     private static final int EVENT_FIND_ADDRESS_DONE = 1;
-    private static final int EVENT_FIND_ADDRESS = 2;
+    //private static final int EVENT_FIND_ADDRESS = 2;
     String result_address;
 
     LocationManager locationManager;
     double longitude;
     double latitude;
+
+    public final int MY_PERMISSONS_REQUEST_READ_CONTACT = 1;
+
+    public static int countValue;
+    public static float distanceValue;
+
+    SharedPreferences record;
+    SharedPreferences.Editor editor;
 
     public RecordingFragment() {
     }
@@ -56,9 +66,6 @@ public class RecordingFragment extends android.support.v4.app.Fragment implement
             switch (msg.what) {
                 case EVENT_FIND_ADDRESS_DONE:
                     location.setText(result_address);
-                    break;
-                case EVENT_FIND_ADDRESS:
-                    //thread.start();
                     break;
                 default:
                     break;
@@ -82,14 +89,21 @@ public class RecordingFragment extends android.support.v4.app.Fragment implement
         IntentFilter intentFilter = new IntentFilter("example.android.com.pacecounter");
         getActivity().registerReceiver(receiver, intentFilter);
 
-        locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
-        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
 
+        try {
+            locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
+            if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                    && ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}
+                        , MY_PERMISSONS_REQUEST_READ_CONTACT);
+                //Toast.makeText(getActivity(), "위치서비스 사용 권한이 없습니다. 설정해 주시기 바랍니다.", Toast.LENGTH_SHORT).show();
+            }
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 1, mLocationListener);
+            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 1, mLocationListener);
+        } catch (SecurityException e) {
+            Log.e("qioip", "location security exception");
         }
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 1, mLocationListener);
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 1, mLocationListener);
 
         thread = new NetworkThread();
         thread.start();
@@ -155,14 +169,12 @@ public class RecordingFragment extends android.support.v4.app.Fragment implement
         public void onReceive(Context context, Intent intent) {
             // TODO Auto-generated method stub
             if (intent.getAction().equals("example.android.com.pacecounter")) {
-                Log.v("ffff", "receive intent");
-                String countValue = intent.getStringExtra("count");
-                String distanceValue = intent.getStringExtra("distance");
-                count.setText(countValue);
-                distance.setText(distanceValue);
+                Log.v("CountRecever", "receive intent");
+                countValue = intent.getIntExtra("count", countValue);
+                distanceValue = intent.getFloatExtra("distance", distanceValue);
+                count.setText(String.valueOf(countValue));
+                distance.setText(Utils.transToKM(distanceValue));
             }
         }
-
     }
-
 }
