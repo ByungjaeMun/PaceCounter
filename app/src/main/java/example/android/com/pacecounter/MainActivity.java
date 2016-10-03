@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
         record = getSharedPreferences("record", 0);
         editor = record.edit();
         editor.putString("current_date", Utils.getCurrentTime());
-
+        editor.commit();
     }
 
     /**

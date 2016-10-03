@@ -29,6 +29,8 @@ import android.widget.Toast;
  */
 public class RecordingFragment extends android.support.v4.app.Fragment implements View.OnClickListener {
 
+    TextView text_date;
+
     protected TextView count;
     protected TextView distance;
     protected TextView location;
@@ -81,6 +83,8 @@ public class RecordingFragment extends android.support.v4.app.Fragment implement
         rootView.findViewById(R.id.start).setOnClickListener(this);
         rootView.findViewById(R.id.stop).setOnClickListener(this);
 
+        text_date = (TextView)rootView.findViewById(R.id.text_date);
+
         count = (TextView) rootView.findViewById(R.id.count);
         distance = (TextView) rootView.findViewById(R.id.distance);
         location = (TextView) rootView.findViewById(R.id.location);
@@ -109,6 +113,15 @@ public class RecordingFragment extends android.support.v4.app.Fragment implement
         thread.start();
 
         return rootView;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        text_date.setText(Utils.getCurrentTime());
+
+        count.setText(String.valueOf(countValue) + "걸음");
+        distance.setText(Utils.transToKM(distanceValue));
     }
 
     private final LocationListener mLocationListener = new LocationListener() {

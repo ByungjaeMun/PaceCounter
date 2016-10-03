@@ -5,6 +5,7 @@ import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
@@ -52,15 +53,22 @@ public class PaceCheckerService extends Service implements SensorEventListener {
     private static final int EVENT_ADD_PACE_INFO = 1;
     private static final int EVENT_REMOVE_PACE_INFO = 2;
 
+    protected SharedPreferences record;
+    protected SharedPreferences.Editor editor;
+
+    protected float action_down;
+
 
     public PaceCheckerService() {
     }
+
 
     private View.OnTouchListener mViewTouchListener = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View v, MotionEvent event) {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
+                    action_down = System.currentTimeMillis();
                     if (MAX_X == -1)
                         setMaxPosition();
                     START_X = event.getRawX();
@@ -84,6 +92,16 @@ public class PaceCheckerService extends Service implements SensorEventListener {
         }
     };
 
+
+    View.OnClickListener mOnClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+//            Log.v("pace service", "mini clicked");
+//            Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+//            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//            startActivity(intent);
+        }
+    };
 
     class UIUpdateHandler extends Handler {
 
@@ -111,7 +129,6 @@ public class PaceCheckerService extends Service implements SensorEventListener {
         }
     }
 
-    ;
 
     @Override
     public void onCreate() {
@@ -121,12 +138,13 @@ public class PaceCheckerService extends Service implements SensorEventListener {
 
 
         mPopupView = new TextView(this);
+        mPopupView.setClickable(true);
         mPopupView.setText("Pace Count Diaplay");
         mPopupView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
         mPopupView.setTextColor(Color.WHITE);
         mPopupView.setTextSize(30);
         mPopupView.setBackgroundColor(Color.BLACK);
-
+        mPopupView.setOnClickListener(mOnClickListener);
         mPopupView.setOnTouchListener(mViewTouchListener);
         mParams = new WindowManager.LayoutParams(900,
                 WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.TYPE_PHONE,
@@ -135,14 +153,6 @@ public class PaceCheckerService extends Service implements SensorEventListener {
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 
 
-        mPopupView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(getApplicationContext(), RecordingFragment.class);
-                //intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(intent);
-            }
-        });
 
         /*ACCELEROMETER SENSOR*/
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
@@ -221,6 +231,9 @@ public class PaceCheckerService extends Service implements SensorEventListener {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        record = getApplication().getSharedPreferences("record", 0);
+        count = record.getInt("count", 0);
+        distance = record.getFloat("distance", 0.0f);
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -230,6 +243,7 @@ public class PaceCheckerService extends Service implements SensorEventListener {
         setMaxPosition();
         optimizePosition();
     }
+
 
     @Override
     public void onDestroy() {
@@ -244,6 +258,12 @@ public class PaceCheckerService extends Service implements SensorEventListener {
         if (accelometer != null) {
             sensorManager.unregisterListener(this);
         }
+
+        record = getApplication().getSharedPreferences("record", 0);
+        editor = record.edit();
+        editor.putInt("count", count);
+        editor.putFloat("distance", distance);
+        editor.commit();
     }
 
 
@@ -270,7 +290,6 @@ public class PaceCheckerService extends Service implements SensorEventListener {
 
     protected static int count;
     protected static float distance;
-
 
 
     @Override
